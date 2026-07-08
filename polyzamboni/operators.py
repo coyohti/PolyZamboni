@@ -2,7 +2,7 @@ import bpy
 import bmesh
 import numpy as np
 import os
-import threading
+import functools
 from bpy.props import StringProperty, PointerProperty, IntProperty
 from bpy_extras.io_utils import ExportHelper
 from .properties import GeneralExportSettings, LineExportSettings, TextureExportSettings, ZamboniGeneralMeshProps, PageLayoutCreationSettings
@@ -486,9 +486,6 @@ class AutoCutsOperator(bpy.types.Operator):
         min=1
     )
 
-    _timer = None
-    _running = False
-
     def invoke(self, context, event):
         wm = context.window_manager
         return wm.invoke_props_dialog(self, title="Auto cut options", confirm_text="Lets go!")
@@ -511,42 +508,49 @@ class AutoCutsOperator(bpy.types.Operator):
         wm = context.window_manager
         wm.polyzamboni_auto_cuts_progress = 0.0
         wm.polyzamboni_auto_cuts_running = True
-        self._timer = wm.event_timer_add(time_step=0.1, window=context.window)
 
-        if self.cutting_algorithm == "GREEDY":
-            def compute_and_report_progress():
-                try:
-                    for progress in greedy_auto_cuts(self._paper_model, self.quality_level, self.loop_alignment, self.max_pieces_per_component):
-                        wm.polyzamboni_auto_cuts_progress = progress
-                except Exception:
-                    print("POLYZAMBONI ERROR: Exception while computing auto cuts!")
-                    self._paper_model.valid = False
-                    wm.polyzamboni_auto_cuts_running = False
-                    self._running = False
-                    raise
-                self._running = False
-                wm.polyzamboni_auto_cuts_running = False
-            threading.Thread(target=compute_and_report_progress).start()
-
+        # register auto cuts timer
+        self.generator = greedy_auto_cuts(self._paper_model, self.quality_level, self.loop_alignment, self.max_pieces_per_component)
+        self.timer = wm.event_timer_add(0.0, window=context.window)
+    
         wm.modal_handler_add(self)
         return { "RUNNING_MODAL" }
 
     def modal(self, context, event):
         if event.type == 'TIMER':
-            for region in context.area.regions:
-                if region.active_panel_category == 'PolyZamboni':
-                    region.tag_redraw()
-            if not self._running:
-                self._paper_model.close()
-                update_all_polyzamboni_drawings(None, context)
-                update_all_page_layout_drawings(None, context)
-                return {'FINISHED'}
+            wm = context.window_manager
+            try:
+                finished = False
+                progress_at_start = wm.polyzamboni_auto_cuts_progress
+                current_progress = progress_at_start
+                while(current_progress < progress_at_start + 0.02):
+                    current_progress = next(self.generator, "finished")
+                    if current_progress == "finished":
+                        finished = True
+                        break
+                wm.polyzamboni_auto_cuts_progress = current_progress if not finished else 1.0            
+                # Force redraw
+                for window in bpy.context.window_manager.windows:
+                    for area in window.screen.areas:
+                        if area.type == 'VIEW_3D':
+                            area.tag_redraw()
+                if finished:
+                    self._paper_model.close()
+                    update_all_polyzamboni_drawings(None, context)
+                    update_all_page_layout_drawings(None, context)
+                    wm.polyzamboni_auto_cuts_running = False
+                    wm.event_timer_remove(self.timer)
+                    return {'FINISHED'}
+            except Exception:
+                print("POLYZAMBONI ERROR: Exception while computing auto cuts!")
+                wm.polyzamboni_auto_cuts_running = False
+                wm.event_timer_remove(self.timer)
+                return {'CANCELLED'}
         return {'RUNNING_MODAL'}
     
     def cancel(self, context):
-        self._running = False
         wm = context.window_manager
-        wm.event_timer_remove(self._timer)
+        wm.event_timer_remove(self.timer)
         wm.progress_end()
 
     @classmethod
