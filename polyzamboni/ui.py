@@ -94,6 +94,15 @@ class MainPanel(bpy.types.Panel):
                         col2 = row.column()
                         col1.operator("polyzamboni.build_order_op")
                         col2.label(icon="MOD_BUILD")
+
+                        row = editing_box.row()
+                        col1 = row.column(align=True).column_flow(columns=2, align=True)
+                        col11 = col1.column(align=True)
+                        col12 = col1.column(align=True)
+                        col3 = row.column()
+                        col11.operator("polyzamboni.cuts_from_seams_op")
+                        col12.operator("polyzamboni.seams_from_cuts_op")
+                        col3.label(icon="EDGE_SEAM")
                 else:
                     editing_box.label(text="Modify Paper Model in Edit Mode")
                     # editing_box.row().operator("polyzamboni.cutgraph_editing_modal_operator")

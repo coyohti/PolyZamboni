@@ -56,6 +56,9 @@ def get_indices_of_not_triangulatable_faces(bm : BMesh):
             non_triangulatable_faces.add(face.index)
     return non_triangulatable_faces
 
+def get_indices_of_cut_edges(mesh : Mesh):
+    return list(io.read_manual_cut_edges(mesh)) + list(io.read_auto_cut_edges(mesh))
+
 def initialize_paper_model(mesh : Mesh):
     new_papermodel = PaperModel.new_from_mesh(mesh)
     new_papermodel.close()

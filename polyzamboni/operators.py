@@ -278,7 +278,7 @@ class SyncMeshOperator(bpy.types.Operator):
         return _active_object_is_mesh_with_paper_model(context)
 
 class SeparateAllMaterialsOperator(bpy.types.Operator):
-    """ Adds cuts to all edges between faces with a different material. """
+    """ Adds cuts to all edges between faces with a different material """
     bl_label = "Separate Materials"
     bl_idname = "polyzamboni.material_separation_op"
 
@@ -293,7 +293,7 @@ class SeparateAllMaterialsOperator(bpy.types.Operator):
         return _active_object_is_mesh_with_paper_model(context) and not bpy.context.window_manager.polyzamboni_in_page_edit_mode
 
 class RemoveAllAutoCutsOperator(bpy.types.Operator):
-    """ Removes all auto cuts from the selected paper model. """
+    """ Removes all auto cuts from the selected paper model """
     bl_label = "Remove Auto Cuts"
     bl_idname = "polyzamboni.auto_cuts_removal_op"
     
@@ -303,6 +303,52 @@ class RemoveAllAutoCutsOperator(bpy.types.Operator):
         update_all_page_layout_drawings(None, context)
         return { 'FINISHED' }
     
+    @classmethod
+    def poll(cls, context):
+        return _active_object_is_mesh_with_paper_model(context) and not bpy.context.window_manager.polyzamboni_in_page_edit_mode
+
+class ApplyCutsFromSeamsOperator(bpy.types.Operator):
+    """ Cut all edges that are marked as seams """
+    bl_label = "Cut at Seams"
+    bl_idname = "polyzamboni.cuts_from_seams_op"
+
+    def execute(self, context):
+        ao = context.active_object
+        ao_mesh : bpy.types.Mesh = ao.data
+        ao_bmesh = bmesh.from_edit_mesh(ao_mesh)
+        seam_edges = [e.index for e in ao_bmesh.edges if e.seam]
+        operators_backend.cut_edges(ao_mesh, seam_edges)
+
+        ao_bmesh.free()
+        update_all_polyzamboni_drawings(None, context)
+        update_all_page_layout_drawings(None, context)
+        return {"FINISHED"}
+
+    @classmethod
+    def poll(cls, context):
+        return _active_object_is_mesh_with_paper_model(context) and not bpy.context.window_manager.polyzamboni_in_page_edit_mode
+
+class ApplySeamsFromCutsOperator(bpy.types.Operator):
+    """ Mark all cut edges as seams """
+    bl_label = "Cuts to Seams"
+    bl_idname = "polyzamboni.seams_from_cuts_op"
+
+    def execute(self, context):
+        bpy.ops.object.mode_set(mode="OBJECT")
+        
+        ao = context.active_object
+        ao_mesh : bpy.types.Mesh = ao.data
+
+        ids = operators_backend.get_indices_of_cut_edges(ao_mesh)
+        seam_array = np.zeros(len(ao_mesh.edges), dtype=bool)
+        ao_mesh.edges.foreach_get('use_seam', seam_array)
+        seam_array[ids] = True
+        print(seam_array)
+        ao_mesh.edges.foreach_set('use_seam', seam_array)
+
+        bpy.ops.object.mode_set(mode="EDIT")
+        return {"FINISHED"}
+
     @classmethod
     def poll(cls, context):
         return _active_object_is_mesh_with_paper_model(context) and not bpy.context.window_manager.polyzamboni_in_page_edit_mode
@@ -1443,6 +1489,8 @@ def register():
     bpy.utils.register_class(PolyZamboniExportPDFOperator)
     bpy.utils.register_class(PolyZamboniExportSVGOperator)
     bpy.utils.register_class(RemoveAllPolyzamboniDataOperator)
+    bpy.utils.register_class(ApplyCutsFromSeamsOperator)
+    bpy.utils.register_class(ApplySeamsFromCutsOperator)
     bpy.utils.register_class(ComputeBuildStepsOperator)
     bpy.utils.register_class(AutoCutsOperator)
     bpy.utils.register_class(SelectNonManifoldVerticesOperator)
@@ -1487,6 +1535,8 @@ def unregister():
     bpy.utils.unregister_class(RecomputeFlapsOperator)
     bpy.utils.unregister_class(SeparateAllMaterialsOperator)
     bpy.utils.unregister_class(RemoveAllAutoCutsOperator)
+    bpy.utils.unregister_class(ApplyCutsFromSeamsOperator)
+    bpy.utils.unregister_class(ApplySeamsFromCutsOperator)
     bpy.utils.unregister_class(FlipGlueFlapsOperator)
     bpy.utils.unregister_class(ZamboniGlueFlapDesignOperator)
     bpy.utils.unregister_class(ZamboniGLueFlapEditingPieMenu)
