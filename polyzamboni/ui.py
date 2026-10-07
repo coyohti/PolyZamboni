@@ -356,26 +356,23 @@ class PageLayoutDrawSettingsPanel(bpy.types.Panel):
         col1.prop(drawing_settings, "hide_fold_edge_angle_th")
         col2.label(icon="CON_ROTLIMIT")
 
+_CLASSES = (
+    POLYZAMBONI_UL_build_sections_list,
+    POLYZAMBONI_UL_build_sections_list_2D_view,
+    BuildSectionsDetailMenu,
+    MainPanel,
+    GlueFlapSettingsPanel,
+    BuildSectionsPanel,
+    DrawSettingsPanel,
+    PageLayoutPanel,
+    PageLayoutBuildSectionsPanel,
+    PageLayoutDrawSettingsPanel,
+)
+
 def register():
-    bpy.utils.register_class(POLYZAMBONI_UL_build_sections_list)
-    bpy.utils.register_class(POLYZAMBONI_UL_build_sections_list_2D_view)
-    bpy.utils.register_class(BuildSectionsDetailMenu)
-    bpy.utils.register_class(MainPanel)
-    bpy.utils.register_class(GlueFlapSettingsPanel)
-    bpy.utils.register_class(BuildSectionsPanel)
-    bpy.utils.register_class(DrawSettingsPanel)
-    bpy.utils.register_class(PageLayoutPanel)
-    bpy.utils.register_class(PageLayoutBuildSectionsPanel)
-    bpy.utils.register_class(PageLayoutDrawSettingsPanel)
+    for cls in _CLASSES:
+        bpy.utils.register_class(cls)
 
 def unregister():
-    bpy.utils.unregister_class(POLYZAMBONI_UL_build_sections_list)
-    bpy.utils.unregister_class(POLYZAMBONI_UL_build_sections_list_2D_view)
-    bpy.utils.unregister_class(BuildSectionsDetailMenu)
-    bpy.utils.unregister_class(MainPanel)
-    bpy.utils.unregister_class(GlueFlapSettingsPanel)
-    bpy.utils.unregister_class(BuildSectionsPanel)
-    bpy.utils.unregister_class(DrawSettingsPanel)
-    bpy.utils.unregister_class(PageLayoutPanel)
-    bpy.utils.unregister_class(PageLayoutBuildSectionsPanel)
-    bpy.utils.unregister_class(PageLayoutDrawSettingsPanel)
+    for cls in reversed(_CLASSES):
+        bpy.utils.unregister_class(cls)
