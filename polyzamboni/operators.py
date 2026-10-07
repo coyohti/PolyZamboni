@@ -319,7 +319,6 @@ class ApplyCutsFromSeamsOperator(bpy.types.Operator):
         seam_edges = [e.index for e in ao_bmesh.edges if e.seam]
         operators_backend.cut_edges(ao_mesh, seam_edges)
 
-        ao_bmesh.free()
         update_all_polyzamboni_drawings(None, context)
         update_all_page_layout_drawings(None, context)
         return {"FINISHED"}
@@ -436,7 +435,6 @@ class ZamboniGlueFlapDesignOperator(bpy.types.Operator):
         elif self.design_actions == "REMOVE_FLAPS":
             operators_backend.remove_glue_flaps(ao_mesh, selected_edges)
 
-        ao_bmesh.free()
         update_all_polyzamboni_drawings(None, context)
         update_all_page_layout_drawings(None, context)
         
@@ -481,7 +479,6 @@ class ZamboniCutDesignOperator(bpy.types.Operator):
             selected_faces = [f.index for f in ao_bmesh.faces if f.select]
             operators_backend.add_cutout_region(ao_mesh, selected_faces)
         
-        ao_bmesh.free()
         update_all_polyzamboni_drawings(None, context)
         update_all_page_layout_drawings(None, context)
 
@@ -1236,7 +1233,6 @@ class PolyZamboniCreateSectionFromSelectedOperator(bpy.types.Operator):
         
         operators_backend.create_build_section_from_selected_faces(active_mesh, bm, active_mesh.polyzamboni_general_mesh_props)
         active_mesh.polyzamboni_general_mesh_props.active_build_section = len(active_mesh.polyzamboni_general_mesh_props.build_sections) - 1
-        bm.free()
         return {'FINISHED'}
 
     @classmethod
@@ -1259,7 +1255,6 @@ class PolyZamboniOverwriteSectionFromSelectedOperator(bpy.types.Operator):
         update_all_page_layout_drawings(None, context)
         PolyZamboniPageLayoutEditingOperator._refresh_drawings_on_next_event = True
 
-        bm.free()
         return {'FINISHED'}
 
     @classmethod
@@ -1284,7 +1279,6 @@ class PolyZamboniAddSelectedComponentsToSectionOperator(bpy.types.Operator):
         update_all_page_layout_drawings(None, context)
         PolyZamboniPageLayoutEditingOperator._refresh_drawings_on_next_event = True
 
-        bm.free()
         return {'FINISHED'}
 
     @classmethod
@@ -1309,7 +1303,6 @@ class PolyZamboniRemoveSelectedComponentsFromSectionOperator(bpy.types.Operator)
         update_all_page_layout_drawings(None, context)
         PolyZamboniPageLayoutEditingOperator._refresh_drawings_on_next_event = True
 
-        bm.free()
         return {'FINISHED'}
 
     @classmethod
@@ -1458,7 +1451,6 @@ class PolyzamboniSelectAllFacesInActiveBuildSection(bpy.types.Operator):
                     vertex.select_set(True)
 
         bmesh.update_edit_mesh(active_mesh)
-        bm.free()
         return {'FINISHED'}
 
     @classmethod
