@@ -301,20 +301,21 @@ def create_print_data_for_all_components(obj : Object, scaling_factor):
             if curr_face.material_index < len(mat_slots):
                 curr_material_slot : bpy.types.MaterialSlot = mat_slots[curr_face.material_index]
                 curr_material : bpy.types.Material = curr_material_slot.material
-                color = curr_material.diffuse_color
+                if curr_material is not None:
+                    color = curr_material.diffuse_color
 
-                # try to get color and texture image path from node tree
-                if curr_material.use_nodes:
-                    for node in curr_material.node_tree.nodes:
-                        if isinstance(node, bpy.types.ShaderNodeBsdfPrincipled):
-                            color = np.array(node.inputs['Base Color'].default_value)
-                        if not isinstance(node, bpy.types.ShaderNodeTexImage):
-                            continue
-                        if not node.image:
-                            continue                            
-                        full_path = bpy.path.abspath(node.image.filepath, library=node.image.library)
-                        norm_path = os.path.normpath(full_path)
-                        text_path = norm_path
+                    # try to get color and texture image path from node tree
+                    if curr_material.use_nodes:
+                        for node in curr_material.node_tree.nodes:
+                            if isinstance(node, bpy.types.ShaderNodeBsdfPrincipled):
+                                color = np.array(node.inputs['Base Color'].default_value)
+                            if not isinstance(node, bpy.types.ShaderNodeTexImage):
+                                continue
+                            if not node.image:
+                                continue
+                            full_path = bpy.path.abspath(node.image.filepath, library=node.image.library)
+                            norm_path = os.path.normpath(full_path)
+                            text_path = norm_path
 
             # collect all faces and apply scaling factor
             triangles_in_unfolding_space = [tuple(scaling_factor * np.asarray(tri_coords, dtype=np.float64)) for tri_coords in unfolded_face_triangles[c_id][face_index]]
