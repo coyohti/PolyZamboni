@@ -18,13 +18,20 @@ class MainPanel(bpy.types.Panel):
         if ao is not None and ao.type == 'MESH':
             active_mesh = ao.data
             zamboni_props : ZamboniGeneralMeshProps = active_mesh.polyzamboni_general_mesh_props
+            mode_row = layout.row()
+            mode_row.enabled = not zamboni_props.has_attached_paper_model
+            mode_row.prop(zamboni_props, "pattern_mode", expand=True)
 
             if not zamboni_props.has_attached_paper_model:
                 row = layout.row()
                 col1 = row.column()
                 col2 = row.column()
-                col1.operator("polyzamboni.cut_initialization_op")
-                col2.label(icon="SHADERFX")
+                if zamboni_props.pattern_mode == "FOAM":
+                    col1.operator("polyzamboni.generate_foam_pattern_op")
+                    col2.label(icon="MOD_CLOTH")
+                else:
+                    col1.operator("polyzamboni.cut_initialization_op")
+                    col2.label(icon="SHADERFX")
                 if zamboni_props.mesh_is_non_manifold:
                     row = layout.row()
                     col1 = row.column()
@@ -49,16 +56,24 @@ class MainPanel(bpy.types.Panel):
                 col2 = row.column()
                 col1.operator("polyzamboni.remove_all_op")
                 col2.label(icon="TRASH")
-                row = layout.row()
-                col1 = row.column()
-                col2 = row.column()
-                col1.operator("polyzamboni.mesh_sync_op")
-                col2.label(icon="FILE_REFRESH")
+                if zamboni_props.pattern_mode == "PAPER":
+                    row = layout.row()
+                    col1 = row.column()
+                    col2 = row.column()
+                    col1.operator("polyzamboni.mesh_sync_op")
+                    col2.label(icon="FILE_REFRESH")
 
                 # cutgraph editing
                 in_edit_mode = context.mode == 'EDIT_MESH'
                 editing_box = layout.box()
-                if in_edit_mode:
+                if zamboni_props.pattern_mode == "FOAM":
+                    editing_box.label(text="Foamsmith Seam Tools")
+                    if in_edit_mode:
+                        editing_box.label(text="Mark panel boundaries as seams.", icon="EDGE_SEAM")
+                    else:
+                        editing_box.label(text="Enter Edit Mode to mark seams.")
+                    editing_box.operator("polyzamboni.generate_foam_pattern_op", icon="MOD_CLOTH")
+                elif in_edit_mode:
                     if context.window_manager.polyzamboni_in_page_edit_mode:
                         editing_box.label(text="PolyZamboni Editing Tools")
                         row = editing_box.row()
@@ -126,6 +141,11 @@ class GlueFlapSettingsPanel(bpy.types.Panel):
     bl_parent_id = "POLYZAMBONI_PT_MainPanel"
     bl_options = {"DEFAULT_CLOSED"}
 
+    @classmethod
+    def poll(cls, context : bpy.types.Context):
+        ao = context.active_object
+        return ao is not None and ao.type == "MESH" and ao.data.polyzamboni_general_mesh_props.pattern_mode == "PAPER"
+
     def draw(self, context : bpy.types.Context):
         layout = self.layout
         ao = context.active_object
@@ -156,6 +176,26 @@ class GlueFlapSettingsPanel(bpy.types.Panel):
                 row.prop(zamboni_props, "smart_trim_glue_flaps")
             else: 
                 layout.label(text="No Cutgraph selected", icon="GHOST_DISABLED")
+
+class FoamsmithPanel(bpy.types.Panel):
+    bl_label = "Foamsmith"
+    bl_idname = "POLYZAMBONI_PT_FoamsmithPanel"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "PolyZamboni"
+    bl_parent_id = "POLYZAMBONI_PT_MainPanel"
+
+    @classmethod
+    def poll(cls, context : bpy.types.Context):
+        ao = context.active_object
+        return ao is not None and ao.type == "MESH" and ao.data.polyzamboni_general_mesh_props.pattern_mode == "FOAM"
+
+    def draw(self, context : bpy.types.Context):
+        layout = self.layout
+        layout.label(text="Mark panel boundaries as seams.", icon="EDGE_SEAM")
+        layout.operator("polyzamboni.generate_foam_pattern_op", icon="MOD_CLOTH")
+        if context.active_object.data.polyzamboni_general_mesh_props.has_attached_paper_model:
+            layout.label(text="Foam patterns allow controlled distortion.", icon="INFO")
 
 class POLYZAMBONI_UL_build_sections_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
@@ -364,6 +404,7 @@ _CLASSES = (
     POLYZAMBONI_UL_build_sections_list_2D_view,
     BuildSectionsDetailMenu,
     MainPanel,
+    FoamsmithPanel,
     GlueFlapSettingsPanel,
     BuildSectionsPanel,
     DrawSettingsPanel,

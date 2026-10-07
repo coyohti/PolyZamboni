@@ -115,6 +115,15 @@ class BuildSectionProperty(bpy.types.PropertyGroup):
     )
 
 class ZamboniGeneralMeshProps(bpy.types.PropertyGroup):
+    pattern_mode : EnumProperty(
+        name="Pattern mode",
+        description="Choose whether the pattern is unfolded as rigid paper or distortion-tolerant EVA foam",
+        items=[
+            ("PAPER", "Paper", "Create rigid, developable paper patterns", "MESH_PLANE", 0),
+            ("FOAM", "EVA Foam", "Create distortion-tolerant patterns from marked seams", "MOD_CLOTH", 1),
+        ],
+        default="PAPER"
+    )
     has_attached_paper_model : BoolProperty(
         name="Has attached paper model",
         description="Is true if the mesh has a paper model attached to it",

@@ -44,7 +44,7 @@ class ColoredTriangleData():
 
     def __init__(self, coords, uvs, abs_texture_path, color=None):
         self.coords = coords
-        self.uvs = [np.array(uv, dtype=np.float64) for uv in uvs]
+        self.uvs = None if uvs is None else [np.array(uv, dtype=np.float64) for uv in uvs]
         self.absolute_texture_path = abs_texture_path # for textured faces 
         self.color = color # for monocolored faces
 
@@ -164,6 +164,8 @@ def compute_all_connected_components_bb_dimensions(obj : Object):
     cyclic_components = io.read_components_with_cycles_set(mesh)
     local_coordinate_systems = io.read_local_coordinate_systems_per_face(mesh)
     affine_transforms_to_root = io.read_affine_transforms_to_roots(mesh)
+    face_triangulations = io.read_triangulation_indices_per_face(mesh)
+    unfolded_face_triangles = io.read_facewise_triangles_per_component(mesh)
     glue_flap_triangles = io.read_glue_flap_geometry_per_edge_per_component(mesh)
     glue_flap_halfedge_dict = io.read_glueflap_halfedge_dict(mesh)
     halfedge_to_face_dict = utils.construct_halfedge_to_face_dict(bm)
@@ -176,8 +178,8 @@ def compute_all_connected_components_bb_dimensions(obj : Object):
             continue
         curr_component_print_data = ComponentPrintData()
 
-        def get_unfolded_vertex_coord(coord, face_index):
-            return unfolding.get_globally_consistent_2d_coord_in_face(mesh, coord, face_index, c_id, local_coordinate_systems, affine_transforms_to_root)
+        def get_unfolded_vertex_coord(vertex, face_index):
+            return unfolding.get_unfolded_vertex_coordinate(mesh, vertex.index, face_index, c_id, face_triangulations, unfolded_face_triangles)
 
         # collect cut edges and fold edges
         for face_index in curr_connected_component_faces:
@@ -193,8 +195,8 @@ def compute_all_connected_components_bb_dimensions(obj : Object):
                 if glueflaps.check_if_edge_of_face_has_glue_flap(curr_edge.index, face_index, glue_flap_halfedge_dict, halfedge_to_face_dict):
                     continue
                 # compute edge coords in unfolding space
-                vertex_coords_3d = [v.co for v in edge_to_correct_halfedge_map[curr_edge.index]]   
-                vertex_coords_unfolded = [get_unfolded_vertex_coord(co_3d, face_index) for co_3d in vertex_coords_3d]
+                edge_vertices = edge_to_correct_halfedge_map[curr_edge.index]
+                vertex_coords_unfolded = [get_unfolded_vertex_coord(vertex, face_index) for vertex in edge_vertices]
                 curr_component_print_data.add_cut_edge(CutEdgeData(tuple(vertex_coords_unfolded), curr_edge.index, curr_edge.is_boundary))
 
         # collect edges and faces for glue flaps
@@ -241,6 +243,7 @@ def create_print_data_for_all_components(obj : Object, scaling_factor):
     glue_flap_halfedge_dict = io.read_glueflap_halfedge_dict(mesh)
     halfedge_to_face_dict = utils.construct_halfedge_to_face_dict(bm)
     section_to_components_dict, component_to_section_dict = io.read_build_sections(mesh)
+    foamsmith_mode = mesh.polyzamboni_general_mesh_props.pattern_mode == "FOAM"
     name_for_sectionless_component = None
     if len(section_to_components_dict.keys()) > 0: # if there are no sections, we don't need to print any section names
         name_for_sectionless_component = utils.get_default_section_name_from_section_index(len(section_to_components_dict.keys()))
@@ -254,8 +257,8 @@ def create_print_data_for_all_components(obj : Object, scaling_factor):
         curr_component_print_data = ComponentPrintData()
         curr_component_print_data.og_component_id = c_id
 
-        def get_unfolded_vertex_coord(coord, face_index):
-            return unfolding.get_globally_consistent_2d_coord_in_face(mesh, coord, face_index, c_id, local_coordinate_systems, affine_transforms_to_root)
+        def get_unfolded_vertex_coord(vertex, face_index):
+            return unfolding.get_unfolded_vertex_coordinate(mesh, vertex.index, face_index, c_id, face_triangulations, unfolded_face_triangles)
 
         # collect material index of first face
         first_face_in_component : bmesh.types.BMFace = bm.faces[iter(curr_connected_component_faces).__next__()]
@@ -267,7 +270,7 @@ def create_print_data_for_all_components(obj : Object, scaling_factor):
         for face_index in curr_connected_component_faces:
             curr_face : bmesh.types.BMFace = bm.faces[face_index]
             # the face with the largest average 'cog to edges'-distance displays the build step number
-            face_cog = np.mean([scaling_factor * get_unfolded_vertex_coord(v.co, face_index) for v in curr_face.verts], axis=0)
+            face_cog = np.mean([scaling_factor * get_unfolded_vertex_coord(v, face_index) for v in curr_face.verts], axis=0)
 
             # map edges to correct halfedges
             edge_to_correct_halfedge_map = utils.compute_edge_to_oriented_halfedge_map(bm, curr_face)
@@ -276,8 +279,8 @@ def create_print_data_for_all_components(obj : Object, scaling_factor):
             dist_cog_edge_sum = 0
             for curr_edge in curr_face.edges:
                 # compute edge coords in unfolding space
-                vertex_coords_3d = [v.co for v in edge_to_correct_halfedge_map[curr_edge.index]]    
-                vertex_coords_unfolded = [scaling_factor * get_unfolded_vertex_coord(co_3d, face_index) for co_3d in vertex_coords_3d]
+                edge_vertices = edge_to_correct_halfedge_map[curr_edge.index]
+                vertex_coords_unfolded = [scaling_factor * get_unfolded_vertex_coord(vertex, face_index) for vertex in edge_vertices]
                 dist_cog_edge_sum += signed_point_dist_to_line(face_cog, vertex_coords_unfolded[0], vertex_coords_unfolded[1])
                 if curr_edge.is_boundary or utils.mesh_edge_is_cut(curr_edge.index, edge_constraints):
                     # check if this edge has a glue flap attached to it
@@ -287,7 +290,7 @@ def create_print_data_for_all_components(obj : Object, scaling_factor):
                     else:
                         # this is a cut edge
                         curr_component_print_data.add_cut_edge(CutEdgeData(tuple(vertex_coords_unfolded), curr_edge.index, curr_edge.is_boundary))
-                elif curr_edge.index not in fold_edge_index_set:
+                elif not foamsmith_mode and curr_edge.index not in fold_edge_index_set:
                     # this is a fold edge
                     fold_edge_index_set.add(curr_edge.index)
                     curr_component_print_data.add_fold_edge(FoldEdgeData(tuple(vertex_coords_unfolded), curr_edge.is_convex, curr_edge.calc_face_angle()))
@@ -344,7 +347,7 @@ def create_print_data_for_all_components(obj : Object, scaling_factor):
 
         # build section name and step number
         face_with_step_number = list(sorted(curr_connected_component_faces, key=lambda face_index : face_cog_scores[face_index], reverse=True))[0] # sorting in the end is a bit meh but whatever
-        step_number_pos = np.mean([scaling_factor * get_unfolded_vertex_coord(v.co, face_with_step_number) for v in bm.faces[face_with_step_number].verts], axis=0)
+        step_number_pos = np.mean([scaling_factor * get_unfolded_vertex_coord(v, face_with_step_number) for v in bm.faces[face_with_step_number].verts], axis=0)
 
         curr_component_print_data.build_step_number_position = step_number_pos
         if c_id in build_step_numbers:

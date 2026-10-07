@@ -13,6 +13,7 @@ from . import geometry
 from . import io
 from . import units
 from . import exporters 
+from . import foamsmith
 from . import printprepper
 from . import utils
 from .papermodel import PaperModel
@@ -71,6 +72,25 @@ def delete_paper_model(mesh : Mesh):
 def sync_paper_model_with_mesh_geometry(mesh : Mesh):
     with PaperModel.from_existing(mesh) as papermodel:
         papermodel.apply_mesh_geometry_changes()
+
+def generate_foam_pattern(obj : Object):
+    """Create a distortion-tolerant pattern from the object's marked seams."""
+    mesh = obj.data
+    zamboni_props = mesh.polyzamboni_general_mesh_props
+    if zamboni_props.has_attached_paper_model:
+        delete_paper_model(mesh)
+
+    zamboni_props.pattern_mode = "FOAM"
+    zamboni_props.glue_flaps_enabled = False
+    initialize_paper_model(mesh)
+    seam_edge_indices = [edge.index for edge in mesh.edges if edge.use_seam]
+    cut_edges(mesh, seam_edge_indices)
+
+    facewise_vertex_coordinates = foamsmith.unwrap_object_from_seams(obj)
+    with PaperModel.from_existing(mesh) as papermodel:
+        papermodel.apply_foam_unfolding(facewise_vertex_coordinates)
+
+    return len(io.read_connected_component_sets(mesh))
 
 #################################
 #   Cut, clear and glue edges   #

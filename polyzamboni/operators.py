@@ -130,6 +130,36 @@ class InitializeCuttingOperator(bpy.types.Operator):
     def poll(cls, context : bpy.types.Context):
         return _active_object_is_mesh(context)
 
+class GenerateFoamPatternOperator(bpy.types.Operator):
+    """Create an EVA foam pattern from the mesh's marked seams"""
+    bl_label = "Generate Foam Pattern from Seams"
+    bl_description = "Flatten seam-defined panels with controlled distortion suitable for EVA foam"
+    bl_idname = "polyzamboni.generate_foam_pattern_op"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        obj = context.active_object
+        return_to_edit_mode = context.mode == "EDIT_MESH"
+        if context.mode != "OBJECT":
+            bpy.ops.object.mode_set(mode="OBJECT")
+        try:
+            component_count = operators_backend.generate_foam_pattern(obj)
+        except Exception as error:
+            self.report({"ERROR"}, f"Foam pattern generation failed: {error}")
+            return {"CANCELLED"}
+        finally:
+            if return_to_edit_mode and obj.mode == "OBJECT":
+                bpy.ops.object.mode_set(mode="EDIT")
+
+        update_all_polyzamboni_drawings(None, context)
+        update_all_page_layout_drawings(None, context)
+        self.report({"INFO"}, f"Generated {component_count} foam pattern pieces")
+        return {"FINISHED"}
+
+    @classmethod
+    def poll(cls, context : bpy.types.Context):
+        return _active_object_is_mesh(context)
+
 class SelectNonManifoldVerticesOperator(bpy.types.Operator):
     """Select all non-manifold vertices"""
     bl_label = "Select non manifold"
@@ -1469,6 +1499,7 @@ def menu_func_polyzamboni_export_svg(self, context):
 
 _CLASSES = (
     InitializeCuttingOperator,
+    GenerateFoamPatternOperator,
     ZamboniCutDesignOperator,
     ZamboniCutEditingPieMenu,
     SyncMeshOperator,

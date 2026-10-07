@@ -93,3 +93,19 @@ def get_globally_consistent_2d_coord_in_face(mesh : Mesh, point_on_face_3d, face
     face_cs = local_coordinate_systems[face_index] if local_coordinate_systems is not None else io.read_local_coordinate_system_of_face(mesh, face_index)
     face_transform_to_root = affine_transforms_to_root[component_id][face_index] if affine_transforms_to_root is not None else io.read_affine_transform_to_roots_of_face_in_component(mesh, component_id, face_index)
     return face_transform_to_root * geometry.to_local_coords(point_on_face_3d, *face_cs)
+
+def get_unfolded_vertex_coordinate(mesh : Mesh, vertex_index, face_index, component_id,
+                                   face_triangulations = None, unfolded_face_triangles = None):
+    """Return the exact stored 2D coordinate for a mesh vertex in a face."""
+    if face_triangulations is None:
+        face_triangulations = io.read_triangulation_indices_per_face(mesh)
+    if unfolded_face_triangles is None:
+        unfolded_face_triangles = io.read_facewise_triangles_per_component(mesh)
+
+    for triangle_indices, triangle_coordinates in zip(
+        face_triangulations[face_index],
+        unfolded_face_triangles[component_id][face_index],
+    ):
+        if vertex_index in triangle_indices:
+            return np.asarray(triangle_coordinates[triangle_indices.index(vertex_index)], dtype=np.float64)
+    raise KeyError(f"Vertex {vertex_index} is not part of face {face_index}")

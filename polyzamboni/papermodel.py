@@ -74,6 +74,36 @@ class ConnectedComponent():
         instance.glueflap_collisions = {}
         return instance
 
+    @classmethod
+    def new_from_foam_region(cls, bmesh : BMesh, face_indices, facewise_vertex_coordinates, face_triangulation_indices, local_coords_per_face):
+        """Create a component from a distortion-tolerant UV flattening."""
+        instance = cls(face_indices)
+        instance.unfolded_face_geometry = {}
+        instance.unfolding_affine_transforms = {}
+        instance.glueflap_geometry = {}
+        instance.glueflap_collisions = {}
+
+        for face_index in face_indices:
+            face = bmesh.faces[face_index]
+            vertex_coordinates = facewise_vertex_coordinates[face_index]
+            instance.unfolded_face_geometry[face_index] = [
+                tuple(np.asarray(vertex_coordinates[vertex_index], dtype=np.float64) for vertex_index in triangle)
+                for triangle in face_triangulation_indices[face_index]
+            ]
+
+            # Retain a best-fit affine transform for compatibility with older
+            # helpers. Exported boundaries use the exact UV vertex coordinates.
+            local_points = [geometry.to_local_coords(vertex.co, *local_coords_per_face[face_index]) for vertex in face.verts]
+            uv_points = [vertex_coordinates[vertex.index] for vertex in face.verts]
+            local_homogeneous = np.column_stack((np.asarray(local_points), np.ones(len(local_points))))
+            affine_coefficients, _, _, _ = np.linalg.lstsq(local_homogeneous, np.asarray(uv_points), rcond=None)
+            instance.unfolding_affine_transforms[face_index] = geometry.AffineTransform2D(
+                linear_part=affine_coefficients[:2].T,
+                affine_part=affine_coefficients[2],
+            )
+
+        return instance
+
     def get_unfolded_vertex_coordinates(self, vertex_coords_3d, face_index, local_coords_per_face):
         """ Maps a 3D point on a given face to the unfolded face in 2D """
         face_cs = local_coords_per_face[face_index]
@@ -441,6 +471,18 @@ class PaperModel():
 
     def compute_all_glueflaps_greedily(self):
         self.__place_all_glue_flaps_via_greedy_dfs()
+
+    def apply_foam_unfolding(self, facewise_vertex_coordinates):
+        """Replace rigid/cyclic component data with distortion-tolerant geometry."""
+        self.remove_all_glue_flaps()
+        for component_index, component in list(self.connected_components.items()):
+            self.connected_components[component_index] = ConnectedComponent.new_from_foam_region(
+                self.bm,
+                component.face_index_set,
+                facewise_vertex_coordinates,
+                self.face_triangulations,
+                self.local_coord_system_per_face,
+            )
 
     def remove_all_glue_flaps(self):
         self.glueflap_dict.clear()
