@@ -11,7 +11,12 @@ class CallbackGlobals():
     _refresh_page_layout_in_modal_operator = False
 
 def redraw_all(*args):
-    update_all_drawings_callback(None, bpy.context)
+    context = bpy.context
+    if context.screen is None:
+        return None
+
+    update_all_drawings_callback(None, context)
+    return None
 
 dummy_owner = object()
 
@@ -33,6 +38,8 @@ def pre_load_handler(dummy):
 @persistent
 def post_load_handler(dummy):
     subscribe_to_active_object()
+    if not bpy.app.timers.is_registered(redraw_all):
+        bpy.app.timers.register(redraw_all, first_interval=0.0)
 
 def update_all_drawings_callback(self, context : bpy.types.Context):
     if np.any([area.type == "VIEW_3D" for area in context.screen.areas]):
