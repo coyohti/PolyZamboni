@@ -108,6 +108,13 @@ def update_all_flap_geometry(mesh : Mesh):
     with PaperModel.from_existing(mesh) as papermodel:
         papermodel.update_all_flap_geometry()
 
+def set_glue_flaps_enabled(mesh : Mesh, enabled):
+    with PaperModel.from_existing(mesh) as papermodel:
+        if enabled:
+            papermodel.compute_all_glueflaps_greedily()
+        else:
+            papermodel.remove_all_glue_flaps()
+
 def add_glue_flaps(mesh : Mesh, edge_indices):
     with PaperModel.from_existing(mesh) as papermodel:
         papermodel.add_glue_flaps_around_edges(edge_indices)

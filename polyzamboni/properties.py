@@ -2,7 +2,7 @@ import bpy
 from bpy.types import Scene
 import numpy as np
 from .drawing import update_all_polyzamboni_drawings, update_all_page_layout_drawings
-from .callbacks import update_glueflap_geometry_callback, update_all_drawings_callback
+from .callbacks import update_glueflap_enabled_callback, update_glueflap_geometry_callback, update_all_drawings_callback
 
 # For more information about Blender Properties, visit:
 # <https://blender.org/api/blender_python_api_2_78a_release/bpy.types.Property.html>
@@ -120,11 +120,18 @@ class ZamboniGeneralMeshProps(bpy.types.PropertyGroup):
         description="Is true if the mesh has a paper model attached to it",
         default=False
     )
+    glue_flaps_enabled : BoolProperty(
+        name="Glue flaps",
+        description="Add glue flaps to cut edges",
+        default=True,
+        update=update_glueflap_enabled_callback
+    )
     glue_flap_height : FloatProperty(
         name="Glue flap height",
         description="Controls how far the glue flaps extend",
         default=0.15,
-        min=0.01,
+        min=0.001,
+        precision=3,
         update=update_glueflap_geometry_callback
     )
     glue_flap_angle : FloatProperty(

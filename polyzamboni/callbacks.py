@@ -5,7 +5,7 @@ from .drawing import update_all_polyzamboni_drawings, hide_all_drawings, update_
 from bpy.app.handlers import persistent
 
 
-from .operators_backend import update_all_flap_geometry
+from .operators_backend import set_glue_flaps_enabled, update_all_flap_geometry
 
 class CallbackGlobals():
     _refresh_page_layout_in_modal_operator = False
@@ -42,6 +42,8 @@ def post_load_handler(dummy):
         bpy.app.timers.register(redraw_all, first_interval=0.0)
 
 def update_all_drawings_callback(self, context : bpy.types.Context):
+    if context.screen is None:
+        return
     if np.any([area.type == "VIEW_3D" for area in context.screen.areas]):
         update_all_polyzamboni_drawings(self, context)
     if np.any([area.type == "IMAGE_EDITOR" for area in context.screen.areas]):
@@ -52,11 +54,20 @@ def update_all_drawings_callback(self, context : bpy.types.Context):
 
 def update_glueflap_geometry_callback(self, context : bpy.types.Context):
     ao = context.active_object
-    if ao.type == 'MESH':
+    if ao is not None and ao.type == 'MESH':
         active_mesh : Mesh = ao.data
         zamboni_props  = active_mesh.polyzamboni_general_mesh_props
         if zamboni_props.has_attached_paper_model:
             update_all_flap_geometry(active_mesh)
+            update_all_drawings_callback(self, context)
+
+def update_glueflap_enabled_callback(self, context : bpy.types.Context):
+    ao = context.active_object
+    if ao is not None and ao.type == 'MESH':
+        active_mesh : Mesh = ao.data
+        zamboni_props = active_mesh.polyzamboni_general_mesh_props
+        if zamboni_props.has_attached_paper_model:
+            set_glue_flaps_enabled(active_mesh, zamboni_props.glue_flaps_enabled)
             update_all_drawings_callback(self, context)
     
 @persistent

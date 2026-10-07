@@ -134,22 +134,25 @@ class GlueFlapSettingsPanel(bpy.types.Panel):
             zamboni_props : ZamboniGeneralMeshProps = active_mesh.polyzamboni_general_mesh_props
             
             if zamboni_props.has_attached_paper_model:
-                row = layout.row()
+                layout.prop(zamboni_props, "glue_flaps_enabled")
+                flap_controls = layout.column()
+                flap_controls.enabled = zamboni_props.glue_flaps_enabled
+                row = flap_controls.row()
                 col1 = row.column()
                 col2 = row.column()
                 col1.operator("polyzamboni.flaps_recompute_op")
                 col2.prop(zamboni_props, "prefer_alternating_flaps", icon="RIGID_BODY", icon_only=True)
-                row = layout.row()
+                row = flap_controls.row()
                 col1 = row.column()
                 col2 = row.column()
                 col1.prop(zamboni_props, "glue_flap_height", icon="DRIVER_DISTANCE")
                 col2.label(icon="DRIVER_DISTANCE")
-                row = layout.row()
+                row = flap_controls.row()
                 col1 = row.column()
                 col2 = row.column()
                 col1.prop(zamboni_props, "glue_flap_angle", icon="DRIVER_ROTATIONAL_DIFFERENCE")
                 col2.label(icon="DRIVER_ROTATIONAL_DIFFERENCE")
-                row = layout.row()
+                row = flap_controls.row()
                 row.prop(zamboni_props, "smart_trim_glue_flaps")
             else: 
                 layout.label(text="No Cutgraph selected", icon="GHOST_DISABLED")

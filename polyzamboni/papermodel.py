@@ -240,6 +240,7 @@ class PaperModel():
         zamboni_props = mesh.polyzamboni_general_mesh_props
         self.zamboni_props = mesh.polyzamboni_general_mesh_props
         self.zigzag_flaps = zamboni_props.prefer_alternating_flaps
+        self.glue_flaps_enabled = zamboni_props.glue_flaps_enabled
         self.flap_height = zamboni_props.glue_flap_height
         self.flap_angle = zamboni_props.glue_flap_angle
         self.smart_flap_trimming_enabled = zamboni_props.smart_trim_glue_flaps
@@ -441,15 +442,24 @@ class PaperModel():
     def compute_all_glueflaps_greedily(self):
         self.__place_all_glue_flaps_via_greedy_dfs()
 
+    def remove_all_glue_flaps(self):
+        self.glueflap_dict.clear()
+        for connected_component in self.connected_components.values():
+            connected_component.remove_all_glue_flaps()
+
     def remove_glue_flaps_around_edges(self, edge_indices):
         for edge_index in edge_indices:
             self.__remove_glue_flap(edge_index)
 
     def add_glue_flaps_around_edges(self, edge_indices):
+        if not self.glue_flaps_enabled:
+            return
         for edge_index in edge_indices:
             self.__add_some_glueflap_to_edge(edge_index)
 
     def flip_glue_flaps_around_edges(self, edge_indices):
+        if not self.glue_flaps_enabled:
+            return
         for edge_index in edge_indices:
             self.__flip_glue_flap(edge_index)
 
@@ -713,10 +723,9 @@ class PaperModel():
 
     def __place_all_glue_flaps_via_greedy_dfs(self):
         """ Attaches flaps to all cut edges (not on boundary edges) """
-        self.glueflap_dict.clear()
-        connected_component : ConnectedComponent
-        for connected_component in self.connected_components.values():
-            connected_component.remove_all_glue_flaps()
+        self.remove_all_glue_flaps()
+        if not self.glue_flaps_enabled:
+            return True
 
         # build dfs tree of cut edges
         no_overlaps_introduced = True
@@ -768,6 +777,10 @@ class PaperModel():
 
     def __greedy_update_flaps_after_touching_edges(self, touched_edge_ids):
         """ This function is cringe lol """
+        if not self.glue_flaps_enabled:
+            self.remove_all_glue_flaps()
+            return True
+
         updated_components = set()
         for touched_edge_index in touched_edge_ids:
             linked_face_ids = [f.index for f in self.bm.edges[touched_edge_index].link_faces]
