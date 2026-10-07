@@ -505,17 +505,20 @@ class PageLayoutCreationSettings(bpy.types.PropertyGroup):
         min=0
     )
 
-# This is where you assign any variables you need in your script. Note that they
-# won't always be assigned to the Scene object but it's a good place to start.
+_CLASSES = (
+    ConnectedComponentProperty,
+    BuildSectionProperty,
+    DrawSettings,
+    ZamboniGeneralMeshProps,
+    GeneralExportSettings,
+    LineExportSettings,
+    TextureExportSettings,
+    PageLayoutCreationSettings,
+)
+
 def register():
-    bpy.utils.register_class(ConnectedComponentProperty)
-    bpy.utils.register_class(BuildSectionProperty)
-    bpy.utils.register_class(DrawSettings)
-    bpy.utils.register_class(ZamboniGeneralMeshProps)
-    bpy.utils.register_class(GeneralExportSettings)
-    bpy.utils.register_class(LineExportSettings)
-    bpy.utils.register_class(TextureExportSettings)
-    bpy.utils.register_class(PageLayoutCreationSettings)
+    for cls in _CLASSES:
+        bpy.utils.register_class(cls)
     Scene.polyzamboni_drawing_settings = bpy.props.PointerProperty(type=DrawSettings)
     bpy.types.Mesh.polyzamboni_general_mesh_props = bpy.props.PointerProperty(type=ZamboniGeneralMeshProps)
     bpy.types.WindowManager.polyzamboni_auto_cuts_progress = FloatProperty(name="Auto Cuts Progress", min=0, max=1, default=0.0)
@@ -523,16 +526,10 @@ def register():
     bpy.types.WindowManager.polyzamboni_in_page_edit_mode = BoolProperty(name="Editing page layout", default=False)
     
 def unregister():
-    bpy.utils.unregister_class(ZamboniGeneralMeshProps)
-    bpy.utils.unregister_class(BuildSectionProperty)
-    bpy.utils.unregister_class(ConnectedComponentProperty)
-    bpy.utils.unregister_class(DrawSettings)
-    bpy.utils.unregister_class(GeneralExportSettings)
-    bpy.utils.unregister_class(LineExportSettings)
-    bpy.utils.unregister_class(TextureExportSettings)
-    bpy.utils.unregister_class(PageLayoutCreationSettings)
     del Scene.polyzamboni_drawing_settings
     del bpy.types.Mesh.polyzamboni_general_mesh_props
     del bpy.types.WindowManager.polyzamboni_auto_cuts_progress
     del bpy.types.WindowManager.polyzamboni_auto_cuts_running
     del bpy.types.WindowManager.polyzamboni_in_page_edit_mode
+    for cls in reversed(_CLASSES):
+        bpy.utils.unregister_class(cls)

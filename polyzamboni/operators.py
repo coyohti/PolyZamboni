@@ -1467,42 +1467,47 @@ def menu_func_polyzamboni_export_pdf(self, context):
 def menu_func_polyzamboni_export_svg(self, context):
     self.layout.operator(PolyZamboniExportSVGOperator.bl_idname, text="Polyzamboni Export SVG")
 
+_CLASSES = (
+    InitializeCuttingOperator,
+    ZamboniCutDesignOperator,
+    ZamboniCutEditingPieMenu,
+    SyncMeshOperator,
+    RecomputeFlapsOperator,
+    SeparateAllMaterialsOperator,
+    RemoveAllAutoCutsOperator,
+    FlipGlueFlapsOperator,
+    ZamboniGlueFlapDesignOperator,
+    ZamboniGLueFlapEditingPieMenu,
+    PolyZamboniExportPDFOperator,
+    PolyZamboniExportSVGOperator,
+    RemoveAllPolyzamboniDataOperator,
+    ApplyCutsFromSeamsOperator,
+    ApplySeamsFromCutsOperator,
+    ComputeBuildStepsOperator,
+    AutoCutsOperator,
+    SelectNonManifoldVerticesOperator,
+    SelectMultiTouchingFacesOperator,
+    SelectNonTriangulatableFacesOperator,
+    PolyZamboniPageLayoutOperator,
+    PolyZamboniPageLayoutEditingOperator,
+    PolyZamboniExitPageLayoutEditingOperator,
+    PolyZamboniStepNumberEditOperator,
+    PolyZamboniCreateSectionFromSelectedOperator,
+    PolyZamboniOverwriteSectionFromSelectedOperator,
+    PolyZamboniRemoveActiveSectionOeprator,
+    PolyzamboniMoveActionSectionUP,
+    PolyzamboniMoveActionSectionDOWN,
+    PolyzamboniClearActionSelection,
+    PolyzamboniLockAllBuildSections,
+    PolyzamboniUnlockAllBuildSections,
+    PolyzamboniSelectAllFacesInActiveBuildSection,
+    PolyZamboniAddSelectedComponentsToSectionOperator,
+    PolyZamboniRemoveSelectedComponentsFromSectionOperator,
+)
+
 def register():
-    bpy.utils.register_class(InitializeCuttingOperator)
-    bpy.utils.register_class(ZamboniCutDesignOperator)
-    bpy.utils.register_class(ZamboniCutEditingPieMenu)
-    bpy.utils.register_class(SyncMeshOperator)
-    bpy.utils.register_class(RecomputeFlapsOperator)
-    bpy.utils.register_class(SeparateAllMaterialsOperator)
-    bpy.utils.register_class(RemoveAllAutoCutsOperator)
-    bpy.utils.register_class(FlipGlueFlapsOperator)
-    bpy.utils.register_class(ZamboniGlueFlapDesignOperator)
-    bpy.utils.register_class(ZamboniGLueFlapEditingPieMenu)
-    bpy.utils.register_class(PolyZamboniExportPDFOperator)
-    bpy.utils.register_class(PolyZamboniExportSVGOperator)
-    bpy.utils.register_class(RemoveAllPolyzamboniDataOperator)
-    bpy.utils.register_class(ApplyCutsFromSeamsOperator)
-    bpy.utils.register_class(ApplySeamsFromCutsOperator)
-    bpy.utils.register_class(ComputeBuildStepsOperator)
-    bpy.utils.register_class(AutoCutsOperator)
-    bpy.utils.register_class(SelectNonManifoldVerticesOperator)
-    bpy.utils.register_class(SelectMultiTouchingFacesOperator)
-    bpy.utils.register_class(SelectNonTriangulatableFacesOperator)
-    bpy.utils.register_class(PolyZamboniPageLayoutOperator)
-    bpy.utils.register_class(PolyZamboniPageLayoutEditingOperator)
-    bpy.utils.register_class(PolyZamboniExitPageLayoutEditingOperator)
-    bpy.utils.register_class(PolyZamboniStepNumberEditOperator)
-    bpy.utils.register_class(PolyZamboniCreateSectionFromSelectedOperator)
-    bpy.utils.register_class(PolyZamboniOverwriteSectionFromSelectedOperator)
-    bpy.utils.register_class(PolyZamboniRemoveActiveSectionOeprator)
-    bpy.utils.register_class(PolyzamboniMoveActionSectionUP)
-    bpy.utils.register_class(PolyzamboniMoveActionSectionDOWN)
-    bpy.utils.register_class(PolyzamboniClearActionSelection)
-    bpy.utils.register_class(PolyzamboniLockAllBuildSections)
-    bpy.utils.register_class(PolyzamboniUnlockAllBuildSections)
-    bpy.utils.register_class(PolyzamboniSelectAllFacesInActiveBuildSection)
-    bpy.utils.register_class(PolyZamboniAddSelectedComponentsToSectionOperator)
-    bpy.utils.register_class(PolyZamboniRemoveSelectedComponentsFromSectionOperator)
+    for cls in _CLASSES:
+        bpy.utils.register_class(cls)
 
     bpy.types.TOPBAR_MT_file_export.append(menu_func_polyzamboni_export_pdf)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_polyzamboni_export_svg)
@@ -1520,45 +1525,12 @@ def register():
         polyzamboni_keymaps.append((keymap, keymap_item))
 
 def unregister():
-    bpy.utils.unregister_class(InitializeCuttingOperator)
-    bpy.utils.unregister_class(ZamboniCutDesignOperator)
-    bpy.utils.unregister_class(ZamboniCutEditingPieMenu)
-    bpy.utils.unregister_class(SyncMeshOperator)
-    bpy.utils.unregister_class(RecomputeFlapsOperator)
-    bpy.utils.unregister_class(SeparateAllMaterialsOperator)
-    bpy.utils.unregister_class(RemoveAllAutoCutsOperator)
-    bpy.utils.unregister_class(ApplyCutsFromSeamsOperator)
-    bpy.utils.unregister_class(ApplySeamsFromCutsOperator)
-    bpy.utils.unregister_class(FlipGlueFlapsOperator)
-    bpy.utils.unregister_class(ZamboniGlueFlapDesignOperator)
-    bpy.utils.unregister_class(ZamboniGLueFlapEditingPieMenu)
-    bpy.utils.unregister_class(PolyZamboniExportPDFOperator)
-    bpy.utils.unregister_class(PolyZamboniExportSVGOperator)
-    bpy.utils.unregister_class(RemoveAllPolyzamboniDataOperator)
-    bpy.utils.unregister_class(ComputeBuildStepsOperator)
-    bpy.utils.unregister_class(AutoCutsOperator)
-    bpy.utils.unregister_class(SelectNonManifoldVerticesOperator)
-    bpy.utils.unregister_class(SelectMultiTouchingFacesOperator)
-    bpy.utils.unregister_class(SelectNonTriangulatableFacesOperator)
-    bpy.utils.unregister_class(PolyZamboniPageLayoutOperator)
-    bpy.utils.unregister_class(PolyZamboniPageLayoutEditingOperator)
-    bpy.utils.unregister_class(PolyZamboniExitPageLayoutEditingOperator)
-    bpy.utils.unregister_class(PolyZamboniStepNumberEditOperator)
-    bpy.utils.unregister_class(PolyZamboniCreateSectionFromSelectedOperator)
-    bpy.utils.unregister_class(PolyZamboniOverwriteSectionFromSelectedOperator)
-    bpy.utils.unregister_class(PolyZamboniRemoveActiveSectionOeprator)
-    bpy.utils.unregister_class(PolyzamboniMoveActionSectionUP)
-    bpy.utils.unregister_class(PolyzamboniMoveActionSectionDOWN)
-    bpy.utils.unregister_class(PolyzamboniClearActionSelection)
-    bpy.utils.unregister_class(PolyzamboniLockAllBuildSections)
-    bpy.utils.unregister_class(PolyzamboniUnlockAllBuildSections)
-    bpy.utils.unregister_class(PolyzamboniSelectAllFacesInActiveBuildSection)
-    bpy.utils.unregister_class(PolyZamboniAddSelectedComponentsToSectionOperator)
-    bpy.utils.unregister_class(PolyZamboniRemoveSelectedComponentsFromSectionOperator)
+    for keymap, keymap_item in polyzamboni_keymaps:
+        keymap.keymap_items.remove(keymap_item)
+    polyzamboni_keymaps.clear()
 
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_polyzamboni_export_pdf)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_polyzamboni_export_svg)
 
-    for keymap, keymap_item in polyzamboni_keymaps:
-        keymap.keymap_items.remove(keymap_item)
-    polyzamboni_keymaps.clear()
+    for cls in reversed(_CLASSES):
+        bpy.utils.unregister_class(cls)
