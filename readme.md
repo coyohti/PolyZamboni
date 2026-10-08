@@ -10,6 +10,8 @@
 > visit the [upstream repository](https://github.com/AntonFlorey/PolyZamboni).
 > 
 
+***
+
 # PolyZamboni - Papercraft in Blender
 
 ![banner](images/PolyZamboniBannerNoText.jpg)
