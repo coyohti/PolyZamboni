@@ -1,3 +1,15 @@
+> [!IMPORTANT]
+> **Experimental community fork**
+>
+> This is an unofficial experimental fork of
+> [AntonFlorey’s PolyZamboni](https://github.com/AntonFlorey/PolyZamboni).
+> It contains Blender compatibility work and experimental features,
+> including the early Foamsmith workflow for EVA-foam patterns.
+>
+> For the official project, documentation, and stable releases, please
+> visit the [upstream repository](https://github.com/AntonFlorey/PolyZamboni).
+> 
+
 # PolyZamboni - Papercraft in Blender
 
 ![banner](images/PolyZamboniBannerNoText.jpg)
